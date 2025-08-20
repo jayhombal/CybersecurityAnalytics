@@ -187,6 +187,13 @@ if not submitted:
             caption="Feature importance from the trained RandomForest model. " \
             "This shows which features the model weighs most heavily when making a prediction.",
         )
+    st.divider()
+    if cluster_plot:
+        st.image(
+            cluster_plot,
+            caption="Cluster plot from the KMeans model." \
+            "This shows the distribution of phishing URL features across different clusters.",
+        )
 
 else:
     # --- Data Preparation and Risk Scoring ---

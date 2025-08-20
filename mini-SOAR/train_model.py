@@ -67,7 +67,8 @@ def generate_synthetic_data(num_samples=500):
         "double_slash_redirecting": np.random.choice(
             [1, -1], num_state_sponsored, p=[0.1, 0.9]
         ),
-        "Prefix_Suffix": np.random.choice([1, -1], num_state_sponsored, p=[0.95, 0.05]),
+        "Prefix_Suffix": np.random.choice([1, -1], 
+            num_state_sponsored, p=[0.95, 0.05]),
         "having_Sub_Domain": np.random.choice(
             [1, 0, -1], num_state_sponsored, p=[0.4, 0.5, 0.1]
         ),
@@ -111,7 +112,8 @@ def generate_synthetic_data(num_samples=500):
         "double_slash_redirecting": np.random.choice(
             [1, -1], num_organized_crime, p=[0.5, 0.5]
         ),
-        "Prefix_Suffix": np.random.choice([1, -1], num_organized_crime, p=[0.7, 0.3]),
+        "Prefix_Suffix": np.random.choice([1, -1], 
+            num_organized_crime, p=[0.95, 0.05]),
         "having_Sub_Domain": np.random.choice(
             [1, 0, -1], num_organized_crime, p=[0.7, 0.2, 0.1]
         ),
@@ -127,7 +129,7 @@ def generate_synthetic_data(num_samples=500):
         "SFH": np.random.choice([-1, 0, 1], num_organized_crime, p=[0.8, 0.15, 0.05]),
         "Abnormal_URL": np.random.choice([1, -1], num_organized_crime, p=[0.7, 0.3]),
         "has_political_keyword": np.random.choice(
-            [1, -1], num_organized_crime, p=[0.1, 0.9]
+            [1, -1], num_organized_crime, p=[0.2, 0.8]
         ),
     }
     df_organized_cybercrime = pd.DataFrame(organized_cybercrime_data)
@@ -179,7 +181,7 @@ def generate_synthetic_data(num_samples=500):
         "double_slash_redirecting": np.random.choice(
             [1, -1], num_benign, p=[0.05, 0.95]
         ),
-        "Prefix_Suffix": np.random.choice([1, -1], num_benign, p=[0.1, 0.9]),
+        "Prefix_Suffix": np.random.choice([1, -1], num_benign, p=[0.05, 0.95]),
         "having_Sub_Domain": np.random.choice(
             [1, 0, -1], num_benign, p=[0.1, 0.4, 0.5]
         ),
@@ -187,7 +189,7 @@ def generate_synthetic_data(num_samples=500):
         "URL_of_Anchor": np.random.choice([-1, 0, 1], num_benign, p=[0.1, 0.2, 0.7]),
         "Links_in_tags": np.random.choice([-1, 0, 1], num_benign, p=[0.1, 0.2, 0.7]),
         "SFH": np.random.choice([-1, 0, 1], num_benign, p=[0.1, 0.1, 0.8]),
-        "Abnormal_URL": np.random.choice([1, -1], num_benign, p=[0.1, 0.9]),
+        "Abnormal_URL": np.random.choice([1, -1], num_benign, p=[0.05, 0.95]),
         "has_political_keyword": np.random.choice([1, -1], num_benign, p=[0.3, 0.7]),
     }
 
