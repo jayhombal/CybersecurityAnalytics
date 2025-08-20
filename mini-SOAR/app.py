@@ -147,8 +147,6 @@ else:
         'Risk Contribution', ascending=False)
 
     # --- Analysis Workflow ---
-    cluster_id = None
-    profile_info = None
     with st.status("Executing SOAR playbook...", expanded=True) as status:
         st.write("▶️ **Step 1: Predictive Analysis** - Running features through classification model.")
         time.sleep(1)
@@ -161,12 +159,15 @@ else:
 
         if is_malicious:
             st.write(f"▶️ **Step 3: Threat Attribution ** - Threat actor profiling using Clustering **.")
+            # use only feature the custering model was trainined on
             clustering_model_features = clustering_model.feature_names_in_
             cluster_prediction = predict_clu_model(clustering_model, data=input_data[clustering_model_features])
-            cluster_id = f'Cluster {cluster_prediction["cluster"].iloc[0]}'
-            profile_info = Threat_actor_profiles.get(cluster_id)
+            cluster_id = cluster_prediction['Cluster'].iloc[0]
+            threat_profile_info = Threat_actor_profiles.get(f'Cluster {cluster_id}', {"name": "Unknown", "description": "No profile matched."})
+            threat_profile_name = threat_profile_info["name"]
             st.write(f"▶️ **Step 3: Threat Attribution Complete ** - Threat actor profiling using Clustering **.")
             time.sleep(1)
+            
             st.write(f"▶️ **Step 4: Prescriptive Analytics** - Engaging **{genai_provider}** for action plan.")
             try:
                 prescription = generate_prescription(genai_provider, {k: v for k, v in input_dict.items()})
@@ -195,11 +196,10 @@ else:
 
     with tab2:
         st.subheader("Threat Actor Profiling")
-        if is_malicious and profile_info:
+        if is_malicious:
+            profile_info = Threat_actor_profiles.get(cluster_id)
             st.info(f"**Attributed Profile: {profile_info['icon']} {profile_info['name']}**")
             st.write(profile_info['description'])
-        elif is_malicious:
-            st.info("Threat actor profile not found for this cluster.")
         else:
             st.info("Threat attribution is only performed on URLs classified as malicious.")
 
