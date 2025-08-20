@@ -2,6 +2,7 @@
 import streamlit as st
 import pandas as pd
 from pycaret.classification import load_model, predict_model
+from pycaret.clustering import load_model as load_clu_model, predict_model as predict_clu_model
 from genai_prescriptions import generate_prescription
 import os
 import time
@@ -16,24 +17,68 @@ st.set_page_config(
 
 # --- Load Model and Feature Plot ---
 @st.cache_resource
-def load_assets():
-    model_path = 'models/phishing_url_detector'
+def load_classfication_assets():
+    classification_model_path = 'models/phishing_url_detector'
     plot_path = 'models/feature_importance.png'
     model = None
     plot = None
-    if os.path.exists(model_path + '.pkl'):
-        model = load_model(model_path)
+    if os.path.exists(classification_model_path + '.pkl'):
+        model = load_model(classification_model_path)
     if os.path.exists(plot_path):
         plot = plot_path
     return model, plot
 
+@st.cache_resource
+def load_clustering_assets():
+    clustering_model_path = 'models/kmeans_clustering_model'
+    plot_path = 'models/cluster_plot.png'
+    cluster_model = None
+    cluster_plot = None
+    if os.path.exists(clustering_model_path + '.pkl'):
+        cluster_model = load_model(clustering_model_path)
+    if os.path.exists(plot_path):
+        plot = plot_path
+    return cluster_model, cluster_plot
 
-model, feature_plot = load_assets()
 
-if not model:
+
+classification_model, feature_plot = load_classfication_assets()
+
+if not classification_model:
     st.error(
         "Model not found. Please wait for the initial training to complete, or check the container logs with `make logs` if the error persists.")
     st.stop()
+else:
+    print("Classification model loaded successfully.")
+
+clustering_model, cluster_plot = load_clustering_assets()
+
+if not clustering_model:
+    st.error(
+        "Clustering model not found. Please wait for the initial training to complete, or check the container logs with `make logs` if the error persists.")
+    st.stop()
+else:
+    print("Clustering model loaded successfully.")
+
+# --- Threat Actor Profile Definitions ---
+# These descriptions map cluster IDs to meaningful profiles
+Threat_actor_profiles = {
+    'Cluster 0': {
+        "name": "Organized Cybercrime",
+        "icon": "💸",
+        "description": "This threat profile is characterized by high-volume, financially motivated attacks. Their methods are often noisy, relying on techniques like URL shortening, IP addresses in URLs, and abnormal structures to overwhelm standard defenses. The primary goal is widespread credential theft or financial fraud."
+    },
+    'Cluster 1': {
+        "name": "State-Sponsored Actor",
+        "icon": "🌐",
+        "description": "This profile represents a highly sophisticated and targeted attacker. They use subtle, well-crafted techniques, such as valid SSL certificates combined with deceptive sub-domains (e.g., `login.microsoft.com-validate.net`). Their goal is typically espionage, intelligence gathering, or strategic disruption."
+    },
+    'Cluster 2': {
+        "name": "Hacktivist",
+        "icon": "📢",
+        "description": "This profile is driven by political or social motives. Their attacks are often opportunistic and may leverage current events. The technical sophistication can vary, but a key indicator is often the use of politically charged keywords or themes in the URL itself to lure victims."
+    },
+}
 
 # --- Sidebar for Inputs ---
 with st.sidebar:
@@ -51,6 +96,7 @@ with st.sidebar:
         'short_service': st.checkbox("Is it a shortened URL", value=False),
         'at_symbol': st.checkbox("URL contains '@' symbol", value=False),
         'abnormal_url': st.checkbox("Is it an abnormal URL", value=True),
+        'political_keyword': st.checkbox("URL contains a political keyword", value=False)
     }
 
     st.divider()
@@ -83,6 +129,7 @@ else:
             0 if form_values['ssl_state'] == 'Suspicious' else 1),
         'Abnormal_URL': 1 if form_values['abnormal_url'] else -1,
         'URL_of_Anchor': 0, 'Links_in_tags': 0, 'SFH': 0,
+        'has_political_keyword': 1 if form_values['political_keyword'] else -1,
     }
     input_data = pd.DataFrame([input_dict])
 
@@ -100,10 +147,12 @@ else:
         'Risk Contribution', ascending=False)
 
     # --- Analysis Workflow ---
+    cluster_id = None
+    profile_info = None
     with st.status("Executing SOAR playbook...", expanded=True) as status:
         st.write("▶️ **Step 1: Predictive Analysis** - Running features through classification model.")
         time.sleep(1)
-        prediction = predict_model(model, data=input_data)
+        prediction = predict_model(classification_model, data=input_data)
         is_malicious = prediction['prediction_label'].iloc[0] == 1
 
         verdict = "MALICIOUS" if is_malicious else "BENIGN"
@@ -111,7 +160,14 @@ else:
         time.sleep(1)
 
         if is_malicious:
-            st.write(f"▶️ **Step 3: Prescriptive Analytics** - Engaging **{genai_provider}** for action plan.")
+            st.write(f"▶️ **Step 3: Threat Attribution ** - Threat actor profiling using Clustering **.")
+            clustering_model_features = clustering_model.feature_names_in_
+            cluster_prediction = predict_clu_model(clustering_model, data=input_data[clustering_model_features])
+            cluster_id = f'Cluster {cluster_prediction["cluster"].iloc[0]}'
+            profile_info = Threat_actor_profiles.get(cluster_id)
+            st.write(f"▶️ **Step 3: Threat Attribution Complete ** - Threat actor profiling using Clustering **.")
+            time.sleep(1)
+            st.write(f"▶️ **Step 4: Prescriptive Analytics** - Engaging **{genai_provider}** for action plan.")
             try:
                 prescription = generate_prescription(genai_provider, {k: v for k, v in input_dict.items()})
                 status.update(label="✅ SOAR Playbook Executed Successfully!", state="complete", expanded=False)
@@ -124,7 +180,7 @@ else:
             status.update(label="✅ Analysis Complete. No threat found.", state="complete", expanded=False)
 
     # --- Tabs for Organized Output ---
-    tab1, tab2, tab3 = st.tabs(["📊 **Analysis Summary**", "📈 **Visual Insights**", "📜 **Prescriptive Plan**"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📊 **Analysis Summary**", "🎯 **Threat Attribution**", "📈 **Visual Insights**", "📜 **Prescriptive Plan**"])
 
     with tab1:
         st.subheader("Verdict and Key Findings")
@@ -138,6 +194,16 @@ else:
         st.caption("This score represents the model's confidence in its prediction.")
 
     with tab2:
+        st.subheader("Threat Actor Profiling")
+        if is_malicious and profile_info:
+            st.info(f"**Attributed Profile: {profile_info['icon']} {profile_info['name']}**")
+            st.write(profile_info['description'])
+        elif is_malicious:
+            st.info("Threat actor profile not found for this cluster.")
+        else:
+            st.info("Threat attribution is only performed on URLs classified as malicious.")
+
+    with tab3:
         st.subheader("Visual Analysis")
         st.write("#### Risk Contribution by Feature")
         st.bar_chart(risk_df.set_index('Feature'))
@@ -148,7 +214,7 @@ else:
             st.image(feature_plot,
                      caption="This plot shows which features the model found most important *overall* during its training.")
 
-    with tab3:
+    with tab4:
         st.subheader("Actionable Response Plan")
         if prescription:
             st.success("A prescriptive response plan has been generated by the AI.", icon="🤖")

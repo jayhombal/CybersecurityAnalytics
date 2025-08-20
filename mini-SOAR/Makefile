@@ -14,7 +14,7 @@ endif
 # --- End of Command Detection ---
 
 
-# Phony targets are not actual files. This prevents conflicts.
+# Phony targets are not actual files. This prevents conflicts. And always runs the commands even if the files exist.
 .PHONY: all build up down logs clean
 
 # The default command when running 'make' is 'make all', which runs 'make up'.

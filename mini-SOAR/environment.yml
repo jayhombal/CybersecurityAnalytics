@@ -1,0 +1,29 @@
+name: mini-soar
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  # Core Python
+  - python=3.11
+
+  # Scientific stack (versions compatible with PyCaret 3.3.2)
+  - numpy=1.26.4
+  - scipy=1.11.4
+  - scikit-learn=1.4.2
+  - pandas=2.1.4   # <2.2 required by PyCaret
+  - pyyaml=6.0.2
+
+  # Useful for notebooks
+  - jupyterlab
+  - ipython
+  - ipywidgets
+
+  # pip-based installs
+  - pip
+  - pip:
+      - pycaret==3.3.2
+      - streamlit
+      - google-generativeai
+      - openai
+      - requests
+      - python-dotenv
