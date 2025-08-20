@@ -73,6 +73,7 @@ With the `Makefile`, running the application is simple.
 
 ## Project Structure
 ```
+
 mini-soar/
 ├── README.md
 ├── Makefile
@@ -85,3 +86,5 @@ mini-soar/
 └── .streamlit/
     └── secrets.toml
 ```
+
+![Python Linting](https://github.com/<your-org>/<your-repo>/actions/workflows/python-lint.yml/badge.svg)
