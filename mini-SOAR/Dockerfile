@@ -16,6 +16,7 @@ RUN apt-get update && \
 # 2. Copy only the requirements file to leverage Docker's layer caching.
 # This layer only gets rebuilt if requirements.txt changes.
 COPY requirements.txt .
+COPY models/ ./models/
 
 # 3. Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
